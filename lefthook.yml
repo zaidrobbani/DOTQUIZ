@@ -1,0 +1,29 @@
+# Urutan saat commit: prettier -> lint (pre-commit) -> commitlint -> build (commit-msg).
+# Pesan commit baru tersedia di hook commit-msg, jadi commitlint & build dijalankan di sana.
+
+pre-commit:
+  piped: true
+  jobs:
+    - name: prettier
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,json,css,md,yml,yaml}"
+      run: bunx prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+    - name: lint
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs}"
+      run: bunx eslint {staged_files}
+
+commit-msg:
+  piped: true
+  jobs:
+    - name: commitlint
+      run: bunx commitlint --edit {1}
+    - name: build
+      run: bun run build
+
+pre-push:
+  piped: true
+  jobs:
+    - name: prettier
+      run: bun run format:check
+    - name: lint
+      run: bun run lint
