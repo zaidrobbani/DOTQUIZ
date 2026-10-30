@@ -1,0 +1,74 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run format:check
+
+  deploy:
+    name: Deploy ke server
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            cd ~/apps/dotquiz
+
+            echo "==> Ambil kode terbaru dari origin/main"
+            git fetch --prune origin main
+            git reset --hard origin/main
+            echo "    commit: $(git log -1 --format='%h %s')"
+
+            echo "==> Build dan jalankan container"
+            docker compose up -d --build --remove-orphans
+
+            echo "==> Cek aplikasi merespons"
+            PORT="$(grep -E '^APP_PORT=' .env | cut -d= -f2 || true)"
+            PORT="${PORT:-80}"
+            for _ in $(seq 1 30); do
+              if curl -fs -o /dev/null "http://localhost:${PORT}/"; then
+                echo "    OK: aplikasi jalan di port ${PORT}"
+                docker image prune -f >/dev/null
+                exit 0
+              fi
+              sleep 2
+            done
+
+            echo "!! Aplikasi tidak merespons. Log terakhir:"
+            docker compose logs --tail 50 web
+            exit 1
