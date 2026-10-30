@@ -56,9 +56,9 @@ export default function QuizProgressHeader({
             "0%": "#6366f1",
             "100%": "#4f46e5",
           }}
-          trailColor="#f1f5f9"
+          railColor="#f1f5f9"
           size={["100%", 8]}
-          className="!m-0"
+          className="m-0!"
         />
         <div className="flex justify-between text-[11px] font-medium text-slate-400 pt-0.5">
           <span>Mulai</span>
