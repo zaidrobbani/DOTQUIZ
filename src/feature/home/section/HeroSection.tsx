@@ -23,7 +23,7 @@ export default function HeroSection({
       </div>
 
       <h1 className="mx-auto max-w-3xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl sm:leading-[1.15]">
-        Satu Soal, Satu Waktu.{" "}
+        Satu Soal, Satu Waktu. Double Waktu, Double Tantangan.{" "}
         <span className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-amber-500 bg-clip-text text-transparent">
           Uji Ketangkasan Berpikirmu.
         </span>
